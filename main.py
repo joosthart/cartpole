@@ -1,21 +1,33 @@
 
 
-from src.algorithms import TabularQLearning
-from src.plot import plot_tabular_q_learning_performance
+import tensorflow as tf
+import matplotlib.pyplot as plt
+
+from src.algorithms import TabularQLearning, DeepQLearning
+from src.plot import plot_dqn_performance
+
 
 def test():
-    estimator = TabularQLearning(render=False, show_every=1000)
+    # estimator = TabularQLearning(render=False, show_every=1000)
 
-    # estimator.train(10000)
+    # # estimator.train(10000)
 
-    # estimator.save('./models/test.pickle')
+    # # estimator.save('./models/test.pickle')
 
-    # pprint(estimator.table)
+    # # pprint(estimator.table)
     
-    plot_tabular_q_learning_performance(
-        './models/works_pretty_good.pickle',
-        './output/tql_discount=0.95_lr=0.1_efolding=None_'
-    )
+    # plot_tabular_q_learning_performance(
+    #     './models/works_pretty_good.pickle',
+    #     './output/tql_discount=0.95_lr=0.1_efolding=None_'
+    # )
+
+    estimator = DeepQLearning()
+
+    estimator.train(50000)
+
+    plot_dqn_performance(estimator, 'dqn')
+
+
 
 if __name__ == '__main__':
     test()
