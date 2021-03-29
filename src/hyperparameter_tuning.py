@@ -2,16 +2,16 @@ from multiprocessing import Pool
 import os
 
 
-from src.algorithms import DeepQLearning
+from src.algorithms import DeepQLearning, TabularQLearning
 from src.plot import plot_dqn_performance
 
-def train_one_model(params):
+def train_one_dqn_model(params):
     
     model = DeepQLearning(**params)
     model.train(int(50), verbose=False)
-    model.save(params['log_dir'].replace('log', 'models'))
+    model.save(params['log_dir'].replace('log_dql', 'models/dql'))
 
-    plot_dqn_performance(model, params['log_dir'].replace('log', 'output'))
+    # plot_dqn_performance(model, params['log_dir'].replace('log', 'output'))
     
 
 def dql(n_cores):
@@ -39,7 +39,7 @@ def dql(n_cores):
                             'batch_size={}'
                         )
                         fn = fn.format('_'.join([str(x) for x in n]), l,d,f,b)
-                        if os.path.exists(os.path.join('log', fn)):
+                        if os.path.exists(os.path.join('log_dql', fn)):
                             continue
                         else:
                             trials.append({
@@ -47,11 +47,80 @@ def dql(n_cores):
                                 'discount': d,
                                 'update_freq': f,
                                 'batch_size': b,
-                                'log_dir': os.path.join('log', fn)
+                                'log_dir': os.path.join('log_dql', fn)
                             })
 
     with Pool(n_cores) as p:
-        p.map(train_one_model, trials)
+        p.map(train_one_dqn_model, trials)
+
+def train_one_tql_model(params):
+    
+    print(params['log_dir'])
+    model = TabularQLearning(**params)
+    model.train(int(2e4), verbose=False)
+    model.save(params['log_dir'].replace('log_tql', 'models/tql') + '.pickle')
+
+def tql(n_cores):
+    
+    grid = {
+        'epsilon': [0.5, 1],
+        'min_epsilon': [1e-2, 5e-1],
+        'epsilon_decay': [0.9, 0.99],
+        'lr': [1e-1, 1e-2],
+        'discount': [0.9, 0.99],
+        'position_step_size': [0.48, 0.24],
+        'velocity_step_size': [0.4, 0.2],
+        'angle_step_size': [0.0418, 0.0209],
+        'angular_velocity_step_size': [0.4, 0.2]
+        
+    }
+
+
+    trials = []
+    for e in grid['epsilon']:
+        for em in grid['min_epsilon']:
+            for ed in grid['epsilon_decay']:
+                for l in grid['lr']:
+                    for d in grid['discount']:
+                        for ps in grid['position_step_size']:
+                            for vs in grid['velocity_step_size']:
+                                for ans in grid['angle_step_size']:
+                                    for avs in grid['angular_velocity_step_size']:
+                                        fn = (
+                                            'epsilon={}_'
+                                            'min_epsilon={}_'
+                                            'epsilon_decay={}_'
+                                            'lr={}_'
+                                            'discount={}_'
+                                            'position_step_size={}_'
+                                            'velocity_step_size={}_'
+                                            'angle_step_size={}_'
+                                            'angular_velocity_step_size={}'
+
+                                        )
+                                        fn = fn.format(
+                                            e, em, ed, l, d, ps, vs, ans, avs
+                                        )
+                                        if os.path.exists(
+                                                os.path.join('log_tql', fn)
+                                            ):
+                                            continue
+                                        else:
+                                            trials.append({
+                                                'epsilon': e,
+                                                'min_epsilon': em,
+                                                'epsilon_decay': ed,
+                                                'lr': l,
+                                                'discount': d,
+                                                'position_step_size': ps,
+                                                'velocity_step_size': vs,
+                                                'angle_step_size': ans,
+                                                'angular_velocity_step_size': avs,
+                                                'log_dir': os.path.join('log_tql', fn)
+                                            })
+
+    with Pool(n_cores) as p:
+        p.map(train_one_tql_model, trials)
 
 if __name__ == '__main__':
-    dql(4)
+    tql(4)

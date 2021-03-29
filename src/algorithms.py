@@ -15,7 +15,8 @@ SEED = 42
 
 class TabularQLearning:
 
-    def __init__(self, epsilon=1, discount=0.95, lr=0.1, e_folding=None, **kwargs):
+    def __init__(self, epsilon=1, discount=0.95, lr=0.1, e_folding=None, 
+                 save_progress=True, log_dir='log_tql', **kwargs):
         self.epsilon = epsilon
         self.max_epsilon = epsilon
         self.min_epsilon = 1e-4
@@ -30,7 +31,11 @@ class TabularQLearning:
             kwargs.get('angular_velocity_step_size', 0.4)
         ]
 
-        self.env = gym.make('CartPole-v1')
+        self.save_progress = save_progress
+        if self.save_progress:
+            self.summary_writer = tf.summary.create_file_writer(log_dir)
+
+        self.env = gym.make('CartPole-v0')
         self.env.seed(SEED)
         self.table = {}
 
@@ -74,7 +79,7 @@ class TabularQLearning:
             self.min_epsilon + \
             (self.max_epsilon - self.min_epsilon)*np.exp(-epoch/self.e_folding)
 
-    def train(self, epochs, maxsteps=10000, render_every=500):
+    def train(self, epochs, maxsteps=10000, render_every=500, verbose=True):
 
         if not self.e_folding:
             self.e_folding = epochs / 10
@@ -82,7 +87,10 @@ class TabularQLearning:
         self.total_training_reward = []
         self.total_epsilon = []
 
-        pbar = tqdm(range(epochs))
+        if verbose:
+            pbar = tqdm(range(epochs))
+        else:
+            pbar = range(epochs)
         for i in pbar:
             step = 0
             done = False
@@ -98,7 +106,7 @@ class TabularQLearning:
             epoch_reward = 0
             while not done and step < maxsteps:
 
-                if i != 0 and i % render_every == 0:
+                if verbose and i != 0 and i % render_every == 0:
                     self.env.render()
 
                 # Exploit
@@ -135,7 +143,21 @@ class TabularQLearning:
             self.total_training_reward.append(epoch_reward)
             self.total_epsilon.append(self.epsilon)
 
-            if i != 0 and i % 100 == 0:
+            if self.save_progress:
+                with self.summary_writer.as_default():
+                    tf.summary.scalar(
+                        'epoch reward', 
+                        epoch_reward, 
+                        step=i
+                    )
+
+                    tf.summary.scalar(
+                        'epsilon', 
+                        self.epsilon, 
+                        step=i
+                    )
+
+            if verbose and i != 0 and i % 100 == 0:
                 pbar.set_postfix({
                     'mean reward': '{:.1f}'.format(
                         np.mean(self.total_training_reward[-100:])

@@ -135,6 +135,6 @@ dmypy.json
 .vscode/
 
 # log dir 
-log/*
+log*
 models/*
 output/*
