@@ -134,7 +134,7 @@ dmypy.json
 # vscode environment
 .vscode/
 
-# log fir 
+# log dir 
 log/*
 models/*
 output/*
