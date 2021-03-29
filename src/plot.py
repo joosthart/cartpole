@@ -21,7 +21,7 @@ def plot_tabular_q_learning_performance(model_fn, save_prefix, show=False):
         total_training_reward.rolling(1000).mean()
     )
     plt.fill_between(
-        range(10000), 
+        range(len(total_training_reward)), 
         total_training_reward.rolling(1000).mean() - total_training_reward.rolling(1000).std(), 
         total_training_reward.rolling(1000).mean() + total_training_reward.rolling(1000).std(),
         alpha=0.5,

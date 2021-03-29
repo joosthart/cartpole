@@ -137,3 +137,4 @@ dmypy.json
 # log fir 
 log/
 models/
+output/

@@ -11,12 +11,11 @@ import tensorflow as tf
 
 from src.models import DenseModel
 
-# SEED = 42
+SEED = 42
 
 class TabularQLearning:
 
-    def __init__(self, render=False, epsilon=1, discount=0.95, lr=0.1, e_folding=None, **kwargs):
-        self.render = render
+    def __init__(self, epsilon=1, discount=0.95, lr=0.1, e_folding=None, **kwargs):
         self.epsilon = epsilon
         self.max_epsilon = epsilon
         self.min_epsilon = 1e-4
@@ -31,8 +30,11 @@ class TabularQLearning:
             kwargs.get('angular_velocity_step_size', 0.4)
         ]
 
-        self.env = gym.make('CartPole-v0')
+        self.env = gym.make('CartPole-v1')
+        self.env.seed(SEED)
         self.table = {}
+
+        np.random.seed(SEED)
 
     def _bellman(self, state, next_state, action, reward):
         q0 = self._get_q_value(state, action)
@@ -133,10 +135,10 @@ class TabularQLearning:
             self.total_training_reward.append(epoch_reward)
             self.total_epsilon.append(self.epsilon)
 
-            if i != 0 and i % 1000 == 0:
+            if i != 0 and i % 100 == 0:
                 pbar.set_postfix({
                     'mean reward': '{:.1f}'.format(
-                        np.mean(self.total_training_reward[-1000:])
+                        np.mean(self.total_training_reward[-100:])
                     )
                 })
 
@@ -220,13 +222,17 @@ class ExperienceBuffer:
 class DeepQLearning:
 
     def __init__(
-            self, num_hidden_states=[128,128], discount=0.9, max_buffer_size=1e6, 
+            self, num_hidden_states=[8,8], discount=0.95, max_buffer_size=1e6, 
             min_buffer_size=1e3, batch_size=64, lr=0.01, update_freq=10, 
-            epsilon=0.9, min_epsilon=0.1, epsilon_decay=0.99, 
+            epsilon=0.2, min_epsilon=0.1, epsilon_decay=0.99, 
             hidden_activation='relu', hidden_initializer='random_normal', 
             output_initializer='random_normal', log_dir='./log/'):
 
         self.env = gym.make('CartPole-v0')
+        self.env.seed(SEED)
+
+        tf.random.set_seed(SEED)
+        np.random.seed(SEED)
 
         self.num_states = self.env.observation_space.shape[0]
         self.num_actions = self.env.action_space.n
@@ -273,9 +279,9 @@ class DeepQLearning:
     def _update_epsilon(self):
         self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
 
-    def _get_action(self, state):
+    def _get_action(self, state, simulate=False):
         # Explore
-        if np.random.random() < self.epsilon:
+        if np.random.random() < self.epsilon and not simulate:
             return self.env.action_space.sample()
         # Exploit
         else:
@@ -389,230 +395,19 @@ class DeepQLearning:
         self.model.save(fn)
 
     def load(self, fn):
-        self.model = self.model.load(fn)
+        self.model.load(fn)
 
+    def simulate(self, n_simulations, verbose=True, maxsteps=500):
 
-
-# class DeepQLearning:
-
-    #     def __init__(
-    #             self, num_hidden_states=[200,200], discount=0.99,
-    #             max_buffer_size=1e5, min_buffer_size=1e2, batch_size=32, lr=1e-2,
-    #             update_freq=25, epsilon=1, min_epsilon=1e-4, e_folding=None,
-    #             hidden_activation='relu', hidden_initializer='glorot_uniform',
-    #             output_activation='sigmoid', output_initializer='glorot_uniform',
-    #             show_every=10):
-
-    #         self.env = gym.make('CartPole-v0')
-
-    #         self.num_states = self.env.observation_space.shape[0]
-    #         self.num_actions = self.env.action_space.n
-
-    #         self.discount = discount
-    #         self.max_buffer_size = max_buffer_size
-    #         self.min_buffer_size = min_buffer_size
-    #         self.batch_size = batch_size
-    #         self.update_freq = update_freq
-    #         self.epsilon = epsilon
-    #         self.max_epsilon = epsilon
-    #         self.min_epsilon = min_epsilon
-    #         self.e_folding = e_folding
-    #         self.show_every = show_every
-
-    #         self.optimizer = tf.optimizers.Adam(lr)
-
-    #         self.model = DenseModel(
-    #             self.num_states,
-    #             self.num_actions,
-    #             num_hidden_states,
-    #             hidden_activation,
-    #             hidden_initializer,
-    #             output_activation,
-    #             output_initializer
-    #         )
-
-    #         self.target_model = DenseModel(
-    #             self.num_states,
-    #             self.num_actions,
-    #             num_hidden_states,
-    #             hidden_activation,
-    #             hidden_initializer,
-    #             output_activation,
-    #             output_initializer
-    #         )
-
-    #         if self.min_buffer_size < self.batch_size:
-    #             raise ValueError((
-    #                 'batch size should be smaller than or equal to minimal buffer'
-    #                 'size.'
-    #             ))
-            
-    #         self.memory = ExperienceBuffer(self.max_buffer_size, self.num_states)
-
-    #     def _update_epsilon(self, episode):
-    #         self.epsilon = \
-    #             self.min_epsilon + \
-    #             (self.max_epsilon - self.min_epsilon) * \
-    #             np.exp(-episode/self.e_folding)
-
-    #     def _get_action(self, state):
-    #         # Explore
-    #         if np.random.random() < self.epsilon:
-    #             return self.env.action_space.sample()
-    #         # Exploit
-    #         else:
-    #             return np.argmax(self.predict(state)[0])
-
-    #     def _bellman(self, next_q, reward):
-    #         return reward + self.discount*next_q
-
-    #     def _add_to_buffer(self, exp):
-
-    #         for idx, k in enumerate(self.exp_buffer.keys()):
-    #             if len(self.exp_buffer[k]) >= self.max_buffer_size:
-    #                 self.exp_buffer[k].pop()
-    #             self.exp_buffer[k].append(exp[idx])
-
-    #         # if self.exp_buffer.shape[0]==0:
-    #         #     self.exp_buffer = np.asarray(exp)
-    #         # elif self.exp_buffer.shape[0] >= self.max_buffer_size:
-    #         #     self.exp_buffer = np.delete(self.exp_buffer, 0, axis=0)
-    #         # else:
-    #         #     self.exp_buffer = np.vstack((self.exp_buffer, np.asarray(exp)))
-
-    #     def _update_model(self):
-
-
-    #         self.model.trainable_variables = \
-    #             self.target_model.trainable_variables.copy()
-
-    #     def predict(self, obs, model=None):  
-    #         features = np.atleast_2d(obs.astype('float32'))
-    #         if not model:
-    #             return self.model(features)
-    #         else:
-    #             return model(features)
-
-    #     def train_one_batch(self):
-
-    #         if len(self.exp_buffer['states']) <= self.min_buffer_size:
-    #             return False
-
-
-    #         sel = np.random.randint(
-    #             0, len(self.exp_buffer['states']), self.batch_size
-    #         )
-
-    #         states = np.asarray(self.exp_buffer['states'])[sel]
-    #         actions = np.asarray(self.exp_buffer['actions'])[sel]
-    #         rewards = np.asarray(self.exp_buffer['rewards'])[sel]
-    #         next_states = np.asarray(self.exp_buffer['next_states'])[sel]
-    #         done_flags = np.asarray(self.exp_buffer['terminal_state_flags'])[sel]
-
-    #         pred = self.predict(next_states, self.target_model)
-    #         next_q = np.max(pred, axis=1)
-
-    #         true_q = np.where(
-    #             done_flags, rewards, self._bellman(next_q, rewards)
-    #         )
-
-    #         with tf.GradientTape() as tape:
-    #             pred_q = tf.math.reduce_sum(
-    #                 self.predict(states, self.model) *
-    #                 tf.one_hot(actions, self.num_actions)
-    #             )
-
-    #             loss = tf.math.reduce_mean((true_q - pred_q)**2)
-
-    #         model_variables = self.model.trainable_variables
-    #         grad = tape.gradient(loss, model_variables)
-
-    #         self.optimizer.apply_gradients(zip(grad, model_variables))
-
-    #         return loss
-
-    #     def simulate_episode(self, render=False):
-
-    #         done = False
-
-    #         # Reset environment
-    #         state = self.env.reset()
-
-            
-
-    #         episode_reward = 0
-    #         episode_loss = []
-    #         burnin = False
-
-    #         i = 0
-    #         while not done:
-    #             if render:
-    #                 self.env.render()
-
-    #             action = self._get_action(state)
-                
-    #             next_state, reward, done, _ = self.env.step(action)
-
-    #             loss = self.train_one_batch()
-    #             if not loss:
-    #                 burnin = True
-    #             else:
-    #                 episode_loss.append(loss)
-    #                 episode_reward += reward
-
-    #             exp = [state, action, reward, next_state, done]
-    #             self._add_to_buffer(exp)
-
-    #             state = next_state
-
-    #             if not burnin and i != 0 and i % self.update_freq == 0:
-    #                 print('update')
-    #                 self._update_model()
-                
-    #             i += 1
-
-    #         # print(episode_reward, episode_loss)
-
-    #         print(i)
-
-    #         if burnin:
-    #             return None, None
-    #         else:
-    #             return episode_reward, episode_loss
-
-    #     def train(self, episodes):
-
-    #         if not self.e_folding:
-    #             self.e_folding = episodes / 10
-
-    #         self.total_training_reward = []
-    #         self.total_training_loss = []
-
-    #         pbar = tqdm(range(episodes))
-    #         for i in pbar:
-    #             burnin = False
-                
-    #             if i != 0 and i % self.show_every == 0:
-    #                 episode_reward, episode_loss = self.simulate_episode(True)
-    #             else:
-    #                 episode_reward, episode_loss = self.simulate_episode()
-
-    #             if not episode_reward or not episode_loss:
-    #                 burnin = True
-    #             else:
-    #                 self.total_training_reward.append(episode_reward)
-    #                 self.total_training_loss.append(np.mean(episode_loss))
-
-    #             if burnin:
-    #                 pbar.set_postfix({'burnin...':''})
-    #             elif i != 0 and i % 10 == 0:
-    #                 pbar.set_postfix({
-    #                     'mean reward': '{:.1f}'.format(
-    #                         np.mean(self.total_training_reward[-10:])
-    #                     )
-    #                 })
-
-    #             self._update_epsilon(i)
-
-    #     def load(self):
-    #         pass
+        for i in range(n_simulations):
+            # Reset environment
+            state = self.env.reset()
+            step = 0
+            done = False
+            while not done and step < maxsteps:
+                self.env.render()
+                action = self._get_action(state, simulate=True)
+                state, _, done, _ = self.env.step(action)
+                step += 1
+            if verbose:          
+                print('Reward run {}: {}'.format(i+1, step))
