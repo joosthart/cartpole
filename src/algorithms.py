@@ -1,8 +1,9 @@
 import pickle
 import random
 import sys
-from numpy.__config__ import show
 from tqdm import tqdm
+import os
+import time
 
 import gym
 import numpy as np
@@ -10,7 +11,7 @@ import tensorflow as tf
 
 from src.models import DenseModel
 
-SEED = 42
+# SEED = 42
 
 class TabularQLearning:
 
@@ -29,8 +30,6 @@ class TabularQLearning:
             kwargs.get('angle_step_size', 0.0418),
             kwargs.get('angular_velocity_step_size', 0.4)
         ]
-
-        self.show_every = kwargs.get('show_every', sys.maxsize)
 
         self.env = gym.make('CartPole-v0')
         self.table = {}
@@ -73,7 +72,7 @@ class TabularQLearning:
             self.min_epsilon + \
             (self.max_epsilon - self.min_epsilon)*np.exp(-epoch/self.e_folding)
 
-    def train(self, epochs, maxsteps=10000):
+    def train(self, epochs, maxsteps=10000, render_every=500):
 
         if not self.e_folding:
             self.e_folding = epochs / 10
@@ -97,7 +96,7 @@ class TabularQLearning:
             epoch_reward = 0
             while not done and step < maxsteps:
 
-                if i != 0 and i % self.show_every == 0:
+                if i != 0 and i % render_every == 0:
                     self.env.render()
 
                 # Exploit
@@ -185,10 +184,10 @@ class ExperienceBuffer:
         self.obs_space = int(obs_space)
 
         self.states = np.zeros((self.max_buffer_size, self.obs_space))
-        self.actions = np.zeros(self.max_buffer_size)
+        self.actions = np.zeros(self.max_buffer_size, dtype=int)
         self.rewards = np.zeros(self.max_buffer_size)
         self.next_states = np.zeros((self.max_buffer_size, self.obs_space))
-        self.done_flags = np.zeros(self.max_buffer_size)
+        self.done_flags = np.zeros(self.max_buffer_size, dtype=bool)
 
         self.row = 0
         self.size = 0
@@ -208,7 +207,7 @@ class ExperienceBuffer:
 
     def get_batch(self, batch_size):
         idx = np.random.choice(
-            min(self.size, self.max_buffer_size), batch_size, replace=True
+            min(self.size, self.max_buffer_size), batch_size, replace=False
         )
         return (
             self.states[idx], 
@@ -221,15 +220,13 @@ class ExperienceBuffer:
 class DeepQLearning:
 
     def __init__(
-            self, num_hidden_states=[8,8], discount=0.99,
-            max_buffer_size=1e6, min_buffer_size=1e2, batch_size=32, lr=1e-2,
-            update_freq=50, epsilon=1, min_epsilon=0.1, e_folding=None,
-            hidden_activation='relu', hidden_initializer='random_normal',
-            output_activation='sigmoid', output_initializer='random_normal',
-            show_every=10, log_dir='./log/'):
+            self, num_hidden_states=[128,128], discount=0.9, max_buffer_size=1e6, 
+            min_buffer_size=1e3, batch_size=64, lr=0.01, update_freq=10, 
+            epsilon=0.9, min_epsilon=0.1, epsilon_decay=0.99, 
+            hidden_activation='relu', hidden_initializer='random_normal', 
+            output_initializer='random_normal', log_dir='./log/'):
 
         self.env = gym.make('CartPole-v0')
-        self.env.seed(SEED)
 
         self.num_states = self.env.observation_space.shape[0]
         self.num_actions = self.env.action_space.n
@@ -240,10 +237,8 @@ class DeepQLearning:
         self.batch_size = batch_size
         self.update_freq = update_freq
         self.epsilon = epsilon
-        self.max_epsilon = epsilon
+        self.epsilon_decay = epsilon_decay
         self.min_epsilon = min_epsilon
-        self.e_folding = e_folding
-        self.show_every = show_every
 
         self.model = DenseModel(
             input_shape=self.num_states,
@@ -252,7 +247,6 @@ class DeepQLearning:
             lr=lr,
             hidden_activation=hidden_activation,
             hidden_initializer=hidden_initializer,
-            output_activation=output_activation,
             output_initializer=output_initializer
         )
 
@@ -263,7 +257,6 @@ class DeepQLearning:
             lr=lr,
             hidden_activation=hidden_activation,
             hidden_initializer=hidden_initializer,
-            output_activation=output_activation,
             output_initializer=output_initializer
         )
 
@@ -277,15 +270,8 @@ class DeepQLearning:
         
         self.memory = ExperienceBuffer(self.max_buffer_size, self.num_states)
 
-    def _update_epsilon(self, episode):
-        # self.epsilon = \
-        #     self.min_epsilon + \
-        #     (self.max_epsilon - self.min_epsilon) * \
-        #     np.exp(-episode/self.e_folding)
-        if self.epsilon > self.min_epsilon:
-            self.epsilon *= 0.9999
-        else:
-            self.epsilon = self.min_epsilon
+    def _update_epsilon(self):
+        self.epsilon = max(self.epsilon * self.epsilon_decay, self.min_epsilon)
 
     def _get_action(self, state):
         # Explore
@@ -293,7 +279,7 @@ class DeepQLearning:
             return self.env.action_space.sample()
         # Exploit
         else:
-            return np.argmax(self.model.predict(np.atleast_2d(state)), axis=1)[0]
+            return np.argmax(self.model.predict(state), axis=1)[0]
 
     def _bellman(self, next_q, reward):
         return reward + self.discount*next_q
@@ -301,59 +287,48 @@ class DeepQLearning:
     def _update_model(self):
         self.target_model.set_weights(self.model.get_weights())
 
-    def predict(self, obs, model=None):  
-        features = np.atleast_2d(obs.astype('float32'))
-        if not model:
-            return self.model(features)
-        else:
-            return model(features)
-
     def train_one_batch(self):
 
         states, actions, rewards, next_states, done_flags = \
             self.memory.get_batch(self.batch_size)
 
-        y_target = self.model.predict(states)
+        q_values = self.model.predict(states)
+        q_values_next = self.target_model.predict(next_states)
 
-        for i in range(states.shape[0]):
-            if done_flags[i]:
-                y_target[i, int(actions[i])] = rewards[i]
-            else:
-                y_next = np.max(
-                    self.target_model.predict(states)
-                )
-                y_target[i, int(actions[i])] = self._bellman(y_next[i], rewards[i])
+        q_values[range(len(q_values)), actions] = \
+            rewards + self.discount*np.max(q_values_next, axis=1)
+        q_values[done_flags, actions[done_flags]] = rewards[done_flags]
 
-        loss = self.model.train(states, y_target)
-
+        loss = self.model.train(states, q_values)
+        
         return loss
 
-    def train(self, num_epochs):
-
-        if not self.e_folding:
-            self.e_folding = num_epochs / 1000
+    def train(self, num_epochs, verbose=True, render_every=500):
 
         self.total_training_reward = []
         self.total_training_loss = []
         self.total_epsilon = []
-        
-        pbar = tqdm(range(num_epochs))
+
+        if verbose:
+            pbar = tqdm(range(num_epochs))
+        else:
+            pbar = range(num_epochs)
         for epoch in pbar:
             state = self.env.reset()
             done = False
-            epoch_reward = 0 
+            epoch_reward = 0
+            epoch_loss = []
             while not done:
-                # if epoch % 500 == 0:
-                #     self.env.render()
-
+                if verbose and epoch != 0 and epoch % render_every == 0:
+                    self.env.render()
                 action = self._get_action(state)
 
                 next_state, reward, done, _ = self.env.step(action)
 
                 epoch_reward += reward
 
-                if done:
-                    reward = -200
+                # if done:
+                #     reward = -100
 
                 self.memory.add(
                     state=state, 
@@ -363,54 +338,58 @@ class DeepQLearning:
                     done_flag=done
                 )
 
+                if self.memory.get_size() > self.min_buffer_size:
+                    loss = self.train_one_batch()
+                    epoch_loss.append(loss) 
+
                 state = next_state
 
             self.total_training_reward.append(epoch_reward)
             self.total_epsilon.append(self.epsilon)
 
-            if self.memory.get_size() > self.min_buffer_size:
-                self._update_epsilon(epoch)
-                
-                epoch_loss = self.train_one_batch()
-                self.total_training_loss.append(epoch_loss)
-                
-                # with self.summary_writer.as_default():
-                #     tf.summary.scalar(
-                #         'epoch reward', 
-                #         epoch_reward, 
-                #         step=epoch
-                #     )
-                #     tf.summary.scalar(
-                #         'running avg reward(100)', 
-                #         np.mean(self.total_training_reward[-100:]), step=epoch
-                #     )
-                #     tf.summary.scalar(
-                #         'average loss', 
-                #         epoch_loss, 
-                #         step=epoch
-                #     )
+            self._update_epsilon()
+            self.total_training_loss.append(epoch_loss)
+            
+            with self.summary_writer.as_default():
+                tf.summary.scalar(
+                    'epoch reward', 
+                    epoch_reward, 
+                    step=epoch
+                )
+
+                tf.summary.scalar(
+                    'average loss', 
+                    np.mean(epoch_loss), 
+                    step=epoch
+                )
+
+                tf.summary.scalar(
+                    'epsilon', 
+                    self.epsilon, 
+                    step=epoch
+                )
             
             if epoch % self.update_freq == 0:
                 self._update_model()
 
-            if epoch % 100 == 0:
+            if verbose:
                 pbar.set_postfix({
-                    'mean reward': '{:.1f}'.format(
-                        np.mean(self.total_training_reward[-100:])
+                    'reward': '{:.1f}'.format(
+                        self.total_training_reward[-1]
                     ),
-                    'max reward': '{:.1f}'.format(
-                        np.max(self.total_training_reward[-100:])
+                    'loss': '{:.3f}'.format(
+                        np.mean(self.total_training_loss[-1])
                     ),
-                    'min reward': '{:.1f}'.format(
-                        np.min(self.total_training_reward[-100:])
-                    ),
-                    'mean_loss': '{:.1f}'.format(
-                        np.mean(self.total_training_loss[-100:])
+                    'epsilon': '{:.3f}'.format(
+                        np.mean(self.epsilon)
                     )
                 })
 
-    def load(self):
-        pass
+    def save(self, fn):
+        self.model.save(fn)
+
+    def load(self, fn):
+        self.model = self.model.load(fn)
 
 
 

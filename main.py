@@ -21,9 +21,11 @@ def test():
     #     './output/tql_discount=0.95_lr=0.1_efolding=None_'
     # )
 
-    estimator = DeepQLearning()
+    estimator = DeepQLearning(log_dir='./log/testen_met_thijs/')
 
-    estimator.train(50000)
+    estimator.train(400, render_every=400)
+
+    estimator.save('models/dqn_first')
 
     plot_dqn_performance(estimator, 'dqn')
 

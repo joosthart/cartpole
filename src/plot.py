@@ -47,11 +47,13 @@ def plot_tabular_q_learning_performance(model_fn, save_prefix, show=False):
     else:
         plt.close()
 
-def plot_dqn_performance(model, save_prefix, window_size=100, show=False):
+def plot_dqn_performance(model, save_prefix, window_size=10, show=False):
 
 
     total_training_reward = pd.Series(model.total_training_reward)
     total_training_loss = pd.Series(model.total_training_loss)
+
+    total_training_loss = total_training_loss.apply(np.nan_to_num)
 
     plt.figure()
     plt.plot(

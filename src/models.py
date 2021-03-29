@@ -1,11 +1,11 @@
 
+import numpy as np
 import tensorflow as tf
 
 class DenseModel:
 
     def __init__(self, input_shape, output_shape, num_hidden_nodes, lr,
                  hidden_activation='relu', hidden_initializer='random_normal',
-                 output_activation='sigmoid', 
                  output_initializer='random_normal'):
         self.input_shape = input_shape
         self.output_shape = output_shape
@@ -13,19 +13,15 @@ class DenseModel:
         self.lr = lr
         self.hidden_activation = hidden_activation
         self.hidden_initializer = hidden_initializer
-        self.output_activation = output_activation
         self.output_initializer = output_initializer
 
-
-        # self.session = tf.Session()
         self.set_model()
-        # self.session.run(tf.global_variables_initializer())
 
     def save(self, fn):
-        pass
+        self.model.save(fn)
 
     def load(self, fn):
-        pass
+        self.model = tf.keras.models.load_model(fn)
 
     def set_weights(self, weights):
         self.model.set_weights(weights)
@@ -64,7 +60,7 @@ class DenseModel:
         )
 
     def predict(self, states):
-        return self.model.predict(states)
+        return self.model.predict(np.atleast_2d(states))
 
     def train(self, x, y):
         return self.model.train_on_batch(x, y)
