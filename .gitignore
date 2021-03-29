@@ -135,6 +135,6 @@ dmypy.json
 .vscode/
 
 # log fir 
-log/
-models/
-output/
+log/*
+models/*
+output/*
