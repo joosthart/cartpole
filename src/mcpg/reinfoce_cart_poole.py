@@ -1,11 +1,12 @@
 from src.mcpg.agent import *
 import multiprocessing as mp
 import gym
+import os
 
 import matplotlib.pyplot as plt
 
 #Set global variables
-Number_episodes = 5
+Number_episodes = 1000
 seed            = 42
 env             = gym.make('CartPole-v0')
 env.seed(seed)
@@ -17,7 +18,7 @@ def MDP(lr = 0.01, gamma = 0.99, normalize = True, n_hidden = 3):
     #allocate memory
     running_mean = []
     running_loss = []
-    running_std  = []
+    running_std  = [] 
     last_results = []
 
     #begin training
@@ -32,11 +33,11 @@ def MDP(lr = 0.01, gamma = 0.99, normalize = True, n_hidden = 3):
         #begin episode run
         while not done:
             #Get and make action from probabillity distribution
-            action = agent.make_move(s_old) #take action given state
+            action, prob_dist = agent.make_move(s_old) #take action given state
             s_new, reward, done, info = env.step(action)
 
             #store run
-            agent.save_step(s_old, action, reward)
+            agent.save_step(s_old, action, reward, prob_dist)
 
             #update
             cum_reward += reward
@@ -53,8 +54,12 @@ def MDP(lr = 0.01, gamma = 0.99, normalize = True, n_hidden = 3):
         running_loss.append(loss)
 
         #Visualize
-        if i_episode % 10 == 0:
-          print('EPISODE {}'.format(i_episode), 
+        if i_episode % 100 == 0:
+            print("Running lr{}_gamma{}_normalize{}_hiddenlayers{}".format(lr, 
+                                                                          gamma,
+                                                                          normalize, 
+                                                                          n_hidden))            
+            print('EPISODE {}'.format(i_episode), 
                 '\t| REWARD: {:.0f}'.format(cum_reward),
                 '\t| RUNNING MEAN: {:.0f}'.format(mean))
 
@@ -62,66 +67,58 @@ def MDP(lr = 0.01, gamma = 0.99, normalize = True, n_hidden = 3):
 
 def visualize(mean, std,lr,gamma, normalize, n_hidden):
   
-  plt.figure()
-  plt.title("lr{}_gamma{}_normalize{}_hiddenlayers{}".format(lr,gamma, normalize, n_hidden))
-  plt.xlabel('Evolution (runs)')
-  plt.ylabel('Running Mean Reward')
-  plt.plot(mean, label = 'Runnning Mean')
-  plt.fill_between(np.arange(len(mean)), mean + std, mean-std, alpha = 0.6, label = '1$\sigma$')
-  plt.tight_layout()
-  plt.savefig('./save/mcpg_lr{}_gamma{}_normalize{}_hiddenlayers{}.pdf')
-  plt.close()
+    plt.figure()
+    plt.title("lr{}_gamma{}_normalize{}_hiddenlayers{}".format(lr,gamma, normalize, n_hidden))
+    plt.xlabel('Evolution (runs)')
+    plt.ylabel('Running Mean Reward')
+    plt.plot(mean, label = 'Runnning Mean')
+    plt.fill_between(np.arange(len(mean)), mean + std, mean-std, alpha = 0.6, label = '1$\sigma$')
+    plt.tight_layout()
+    plt.savefig('./save/mcpg_lr{}_gamma{}_normalize{}_hiddenlayers{}.pdf')
+    plt.close()
 
 
 def hyperparameter_tuning(gamma):
-  """Run hyper parameter search"""
-  #Set Hyper-parameter space
-  lrs = np.array([0.01, 0.001])
-  normalizes = [True, False]
-  n_hidden_layers = [2,0]
+    """Run hyper parameter search"""
+    #Set Hyper-parameter space
+    lrs = np.array([0.01, 0.001])
+    normalizes = [True, False]
+    n_hidden_layers = [2,0]
+    
+    for lr in lrs:
+        for normalize in normalizes:
+            for n_hidden in n_hidden_layers:
+                last_results, running_mean, running_loss, running_std = MDP(lr, gamma, normalize, n_hidden)
+#                 visualize(running_mean, running_std, lr,gamma, normalize, n_hidden)
 
-  for lr in lrs:
-    for normalize in normalizes:
-      for n_hidden in n_hidden_layers:
-        last_results, running_mean, running_loss, running_std = MDP(lr, gamma, normalize, n_hidden)
-        
-        print()
-        print("Running lr{}_gamma{}_normalize{}_hiddenlayers{}".format(lr, 
-                                                                      gamma,
-                                                                      normalize, 
-                                                                      n_hidden))
-        
-        print()
-        visualize(running_mean, running_std, lr,gamma, normalize, n_hidden)
-
-        #save
-        np.save('./save/last_results_lr{}_gamma{}_normalize{}_hiddenlayers{}.npy'.format(lr, 
-                                                                                  gamma,
-                                                                                  normalize, 
-                                                                                  n_hidden), last_results)
-        np.save('./save/running_mean_lr{}_gamma{}_normalize{}_hiddenlayers{}.npy'.format(lr, 
-                                                                                  gamma,
-                                                                                  normalize, 
-                                                                                  n_hidden), running_mean)
-        np.save('./save/running_loss_lr{}_gamma{}_normalize{}_hiddenlayers{}.npy'.format(lr, 
-                                                                                  gamma,
-                                                                                  normalize, 
-                                                                                  n_hidden), running_loss)
-        np.save('./save/running_std_lr{}_gamma{}_normalize{}_hiddenlayers{}.npy'.format(lr, 
-                                                                                  gamma,
-                                                                                  normalize, 
-                                                                                  n_hidden), running_std)
+                #save
+                np.save('./save/last_results_lr{}_gamma{}_normalize{}_hiddenlayers{}.npy'.format(lr, 
+                                                                                          gamma,
+                                                                                          normalize, 
+                                                                                          n_hidden), last_results)
+                np.save('./save/running_mean_lr{}_gamma{}_normalize{}_hiddenlayers{}.npy'.format(lr, 
+                                                                                          gamma,
+                                                                                          normalize, 
+                                                                                          n_hidden), running_mean)
+                np.save('./save/running_loss_lr{}_gamma{}_normalize{}_hiddenlayers{}.npy'.format(lr, 
+                                                                                          gamma,
+                                                                                          normalize, 
+                                                                                          n_hidden), running_loss)
+                np.save('./save/running_std_lr{}_gamma{}_normalize{}_hiddenlayers{}.npy'.format(lr, 
+                                                                                          gamma,
+                                                                                          normalize, 
+                                                                                          n_hidden), running_std)
 
 
 def main():
-  """Run all done experiments"""
+    """Run all done experiments"""
 
-  #Set Hyper-parameter space
-  gms = np.array([0.99,0.95,0.999])
-  pool = mp.Pool(3)
+    #Set Hyper-parameter space
+    gms = np.array([0.99,0.95,0.999])
+    pool = mp.Pool(3)
 
-  #run 
-  pool.map(hyperparameter_tuning, gms)    
+    #run 
+    pool.map(hyperparameter_tuning, gms)    
 
 if __name__ == '__main__':
-  main()
+    main()

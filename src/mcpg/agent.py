@@ -87,11 +87,11 @@ class Agency():
 
         #Should do over last 100 results
         if len(last_results) < 100:
-          mean = np.mean(last_results)
-          std  = np.std(last_results) 
+            mean = np.mean(last_results)
+            std  = np.std(last_results) 
         else:
-          mean = np.mean(last_results[-100:])
-          std  = np.std(last_results[-100:])
+            mean = np.mean(last_results[-100:])
+            std  = np.std(last_results[-100:])
 
         self.episode_states      = []
         self.episode_probs       = []
@@ -101,7 +101,6 @@ class Agency():
         self.episode += 1
 
         return loss, mean, std
-
 
     def get_reward_trace(self):
         """Get the Sum over the rewards in the episode, see Alg. 3 on page 47"""
@@ -115,8 +114,8 @@ class Agency():
         
         # Perform Baseline Subtraction. 
         if self.NORM == True:
-          grad = grad - np.mean(grad)
-          grad = grad / np.std(grad)
-          return grad
+            grad = grad - np.mean(grad)
+            grad = grad / np.std(grad)
+            return grad
         else:
-          return grad
+            return grad
