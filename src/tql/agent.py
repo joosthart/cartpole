@@ -10,14 +10,14 @@ SEED = 42
 
 class TabularQLearning:
 
-    def __init__(self, epsilon=1, discount=0.95, lr=0.1, e_folding=None, 
+    def __init__(self, epsilon=1, discount=0.95, lr=0.1, epsilon_decay=0.999, 
                  save_progress=True, log_dir='log_tql', **kwargs):
         self.epsilon = epsilon
         self.max_epsilon = epsilon
         self.min_epsilon = 1e-4
         self.discount = discount
         self.lr = lr
-        self.e_folding = e_folding
+        self.epsilon_decay = epsilon_decay
 
         self.step_size = [
             kwargs.get('position_step_size', 0.48),
@@ -70,14 +70,9 @@ class TabularQLearning:
         )
 
     def _update_epsilon(self, epoch):
-        self.epsilon = \
-            self.min_epsilon + \
-            (self.max_epsilon - self.min_epsilon)*np.exp(-epoch/self.e_folding)
+        self.epsilon = max(self.min_epsilon, self.epsilon*self.epsilon_decay)
 
     def train(self, epochs, maxsteps=10000, render_every=500, verbose=True):
-
-        if not self.e_folding:
-            self.e_folding = epochs / 10
 
         self.total_training_reward = []
         self.total_epsilon = []
