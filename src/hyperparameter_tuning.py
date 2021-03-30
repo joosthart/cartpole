@@ -1,17 +1,14 @@
 from multiprocessing import Pool
 import os
 
-
-from src.algorithms import DeepQLearning, TabularQLearning
-from src.plot import plot_dqn_performance
+from src.dql.agent import DeepQLearning
+from src.tql.agent import TabularQLearning
 
 def train_one_dqn_model(params):
     
     model = DeepQLearning(**params)
     model.train(int(50), verbose=False)
     model.save(params['log_dir'].replace('log_dql', 'models/dql'))
-
-    # plot_dqn_performance(model, params['log_dir'].replace('log', 'output'))
     
 
 def dql(n_cores):

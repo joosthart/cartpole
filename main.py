@@ -3,7 +3,7 @@
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-from src.algorithms import TabularQLearning, DeepQLearning
+from src.dql.agent import DeepQLearning
 from src.plot import plot_dqn_performance, plot_tabular_q_learning_performance
 
 
