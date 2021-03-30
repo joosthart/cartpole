@@ -92,9 +92,7 @@ class TabularQLearning:
         else:
             pbar = range(epochs)
         for i in pbar:
-            step = 0
-            done = False
-
+            
             # Reset environment
             state = self.env.reset()
 
@@ -104,6 +102,8 @@ class TabularQLearning:
                 self._add_state(state_disc)
 
             epoch_reward = 0
+            step = 0
+            done = False
             while not done and step < maxsteps:
 
                 if verbose and i != 0 and i % render_every == 0:
@@ -355,9 +355,6 @@ class DeepQLearning:
 
                 epoch_reward += reward
 
-                # if done:
-                #     reward = -100
-
                 self.memory.add(
                     state=state, 
                     action=action, 
@@ -375,7 +372,9 @@ class DeepQLearning:
             self.total_training_reward.append(epoch_reward)
             self.total_epsilon.append(self.epsilon)
 
-            self._update_epsilon()
+            if self.memory.get_size() > self.min_buffer_size:
+                self._update_epsilon()
+
             self.total_training_loss.append(epoch_loss)
             
             with self.summary_writer.as_default():
