@@ -101,3 +101,27 @@ def plot_dqn_performance(model, save_prefix, window_size=10, show=False):
         plt.show()
     else:
         plt.close()
+
+def plot_mcpg(mean_str, std_str, params, savepath):
+    """ Plots the Figures of the MCPG algorithms
+    """
+    mean = np.load(savepath + mean_str.format(params[0], params[1], np.bool(params[2]), np.int(params[3])))
+    std  = np.load(savepath + std_str.format(params[0], params[1], np.bool(params[2]), np.int(params[3])))
+    
+    fig, ax = plt.subplots()
+    ax.set_title('lr = {}, $\gamma$ = {}, Normalized = {}, and # of hidden layers = {}'.format(params[0],
+                                                                                               params[1],
+                                                                                               np.bool(params[2]),
+                                                                                               np.int(params[3])),
+                fontsize = 9)
+    ax.plot(mean)
+    ax.fill_between(range(len(mean)), mean - std, mean + std, alpha=0.5, label='Standard Deviation'    )
+    ax.set_xlim(0, len(mean))
+    ax.axhline(200, ls='dashed', color='black')
+    ax.set_xlabel('Episode')
+    ax.set_ylabel('Rolling Mean Reward')
+    ax.legend(loc = 4)
+
+    plt.tight_layout()
+    plt.savefig(savepath, dpi=300)
+    plt.close()

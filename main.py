@@ -72,12 +72,11 @@ if __name__ == '__main__':
     if args.run_experiments and args.run_experiments.lower() == 'all':
         hyperparameter_tuning.tql(args.cores)
         hyperparameter_tuning.dql(args.cores)
-
+        hyperparameter_tuning.mcpg(args.cores)
+        
     elif args.run_experiments and args.run_experiments.lower() == 'tql':
         hyperparameter_tuning.tql(args.cores)
     elif args.run_experiments and args.run_experiments.lower() == 'dql':
         hyperparameter_tuning.dql(args.cores)
     elif args.run_experiments and args.run_experiments.lower() == 'mcpg':
-        pass
-        # TODO josh func
-    
+        hyperparameter_tuning.mcpg(args.cores)
