@@ -22,6 +22,7 @@ def dql(n_cores):
     }
 
 
+    # TODO fix the for-loops; temporary solution
     trials = []
     for n in grid['num_hidden_states']:
         for l in grid['lr']:
@@ -73,7 +74,7 @@ def tql(n_cores):
         
     }
 
-
+    # TODO fix the for-loops; temporary solution
     trials = []
     for e in grid['epsilon']:
         for em in grid['min_epsilon']:

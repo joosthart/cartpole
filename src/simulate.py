@@ -1,5 +1,4 @@
 
-
 from src.dql.agent import DeepQLearning
 from src.tql.agent import TabularQLearning
 
@@ -10,10 +9,9 @@ def dql(episodes, model_path = (
         
 
     agent = DeepQLearning()
-
     agent.load(model_path)
-    agent.simulate(episodes, verbose=True)
 
+    agent.simulate(episodes, verbose=True)
 
 def tql(episodes, model_path = (
             'demo/dql/'
@@ -21,6 +19,6 @@ def tql(episodes, model_path = (
         )):
         
     agent = TabularQLearning()
-
     agent.load(model_path)
+
     agent.simulate(episodes, verbose=True)

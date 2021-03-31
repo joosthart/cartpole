@@ -5,8 +5,6 @@ import pandas as pd
 
 from src.algorithms import TabularQLearning
 
-plt.style.use('seaborn-darkgrid')
-
 def plot_tabular_q_learning_performance(model_fn, save_prefix, show=False):
 
     estimator = TabularQLearning()
