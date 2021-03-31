@@ -35,3 +35,5 @@ We had help from some very good blogs and code examples. Below a list of the mos
 - https://lilianweng.github.io/lil-log/2018/05/05/implementing-deep-reinforcement-learning-models.html
 - https://towardsdatascience.com/deep-reinforcement-learning-build-a-deep-q-network-dqn-to-play-cartpole-with-tensorflow-2-and-gym-8e105744b998
 - https://www.mlprojecttutorials.com/reinforcement%20learning/cartpole/
+- https://medium.com/swlh/policy-gradient-reinforcement-learning-with-keras-57ca6ed32555
+- https://medium.com/@dey.ritajit/learning-cart-pole-and-lunar-lander-through-reinforce-9191fa21decc
