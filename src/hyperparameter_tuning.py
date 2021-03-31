@@ -7,8 +7,8 @@ from src.tql.agent import TabularQLearning
 def train_one_dqn_model(params):
     
     model = DeepQLearning(**params)
-    model.train(int(50), verbose=False)
-    model.save(params['log_dir'].replace('log_dql', 'models/dql'))
+    model.train(int(150), verbose=False)
+    model.save(params['log_dir'].replace('dql', 'models/dql'))
     
 
 def dql(n_cores):
@@ -44,18 +44,19 @@ def dql(n_cores):
                                 'discount': d,
                                 'update_freq': f,
                                 'batch_size': b,
-                                'log_dir': os.path.join('log_dql', fn)
+                                'log_dir': os.path.join(
+                                    'log', 'dql', fn
+                                )
                             })
 
     with Pool(n_cores) as p:
         p.map(train_one_dqn_model, trials)
 
 def train_one_tql_model(params):
-    
-    print(params['log_dir'])
+
     model = TabularQLearning(**params)
     model.train(int(2e4), verbose=False)
-    model.save(params['log_dir'].replace('log_tql', 'models/tql') + '.pickle')
+    model.save(params['log_dir'].replace('tql', 'models/tql') + '.pickle')
 
 def tql(n_cores):
     
@@ -113,11 +114,10 @@ def tql(n_cores):
                                                 'velocity_step_size': vs,
                                                 'angle_step_size': ans,
                                                 'angular_velocity_step_size': avs,
-                                                'log_dir': os.path.join('log_tql', fn)
+                                                'log_dir': os.path.join(
+                                                    'log','tql', fn
+                                                )
                                             })
 
     with Pool(n_cores) as p:
         p.map(train_one_tql_model, trials)
-
-if __name__ == '__main__':
-    tql(4)

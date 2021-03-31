@@ -123,7 +123,7 @@ class DeepQLearning:
     def _update_model(self):
         self.target_model.set_weights(self.model.get_weights())
 
-    def train_one_batch(self):
+    def _train_one_batch(self):
 
         states, actions, rewards, next_states, done_flags = \
             self.memory.get_batch(self.batch_size)
@@ -172,7 +172,7 @@ class DeepQLearning:
                 )
 
                 if self.memory.get_size() > self.min_buffer_size:
-                    loss = self.train_one_batch()
+                    loss = self._train_one_batch()
                     epoch_loss.append(loss) 
 
                 state = next_state
@@ -228,15 +228,23 @@ class DeepQLearning:
 
     def simulate(self, n_simulations, verbose=True, maxsteps=500):
 
+        rewards = []
         for i in range(n_simulations):
             # Reset environment
             state = self.env.reset()
-            step = 0
+            sim_reward = 0
+            step = 0 
             done = False
+            self.epsilon = 0.1 
             while not done and step < maxsteps:
-                self.env.render()
-                action = self._get_action(state, simulate=True)
-                state, _, done, _ = self.env.step(action)
+                if verbose:
+                    self.env.render()
+                action = self._get_action(state, simulate=False)
+                state, reward, done, _ = self.env.step(action)
+                sim_reward += reward
                 step += 1
             if verbose:          
-                print('Reward run {}: {}'.format(i+1, step))
+                print('Reward run {}: {}'.format(i+1, sim_reward))
+            rewards.append(sim_reward)
+        return rewards
+        

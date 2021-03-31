@@ -21,7 +21,7 @@ class DenseModel:
         self.model.save(fn)
 
     def load(self, fn):
-        self.model = tf.keras.models.load_model(fn)
+        self.model = tf.keras.models.load_model(fn, compile=False)
 
     def set_weights(self, weights):
         self.model.set_weights(weights)
