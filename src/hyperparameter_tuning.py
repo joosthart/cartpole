@@ -66,7 +66,7 @@ def tql(n_cores):
     grid = {
         'epsilon': [0.5, 1],
         'min_epsilon': [1e-2, 5e-1],
-        'epsilon_decay': [0.9, 0.99],
+        'epsilon_decay': [0.99, 0.999],
         'lr': [1e-1, 1e-2],
         'discount': [0.9, 0.99],
         'position_step_size': [0.48, 0.24],

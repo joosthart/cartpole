@@ -35,6 +35,13 @@ parser.add_argument(
     help='Number of cores to use for running experiments.'
 )
 
+parser.add_argument(
+    '-m', '--max-steps', 
+    default=500,
+    type=int,
+    help='Maximum number of steps for simulation.'
+)
+
 
 args = parser.parse_args()
 
@@ -63,9 +70,9 @@ if __name__ == '__main__':
 
     if args.simulate:
         if args.simulate.lower() == 'tql':
-            simulate.tql(args.epsisodes)
+            simulate.tql(args.epsisodes, max_steps=args.max_steps)
         elif args.simulate.lower() == 'dql':
-            simulate.dql(args.epsisodes)
+            simulate.dql(args.epsisodes, max_steps=args.max_steps)
         else:
             raise ValueError('Unknown model "{}"'.format(args.simulate))
 

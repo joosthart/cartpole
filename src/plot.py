@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from src.algorithms import TabularQLearning
+from src.tql.agent import TabularQLearning
 
 def plot_tabular_q_learning_performance(model_fn, save_prefix, show=False):
 

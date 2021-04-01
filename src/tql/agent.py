@@ -33,7 +33,7 @@ class TabularQLearning:
             self.summary_writer = tf.summary.create_file_writer(log_dir)
 
         # Init env
-        self.env = gym.make('CartPole-v0')
+        self.env = gym.make(kwargs.get('environment', 'CartPole-v0'))
         self.env.seed(SEED)
         
         self.table = {}
@@ -180,7 +180,7 @@ class TabularQLearning:
                 step += 1
 
             # Update epsilon
-            self._update_epsilon(i)
+            self._update_epsilon()
 
             self.total_training_reward.append(epoch_reward)
             self.total_epsilon.append(self.epsilon)
@@ -264,5 +264,5 @@ class TabularQLearning:
                 step += 1
             if verbose:          
                 print('Reward run {}: {}'.format(i+1, sim_reward))
-            rewards.append(reward)
+            rewards.append(sim_reward)
         return rewards

@@ -21,9 +21,9 @@ tensorboard --log-dir ./log/
 
 
 
-With the following command, 5 episodes of the DQL agent will be shown:
+With the following command, 5 episodes with a maximum of 150 steps of the DQL agent will be shown:
 ```
-python main.py --simulate DQL --episodes 5
+python main.py --simulate DQL --episodes 5 --max-steps 150
 ```
 All options can be displayed using:
 ```
