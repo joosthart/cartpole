@@ -1,9 +1,10 @@
 import argparse
 import os
 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 from src import hyperparameter_tuning
 from src import simulate
-
 
 parser = argparse.ArgumentParser(description='placeholder')
 
