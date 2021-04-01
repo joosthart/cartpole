@@ -49,25 +49,25 @@ args = parser.parse_args()
 if __name__ == '__main__':
     
     if not os.path.exists('log/tql'):
-        os.mkdir('log/tql')
+        os.makedirs(os.path.join('log','tql'))
     if not os.path.exists('log/dql'):
-        os.mkdir('log/dql')
+        os.makedirs(os.path.join('log','dql'))
     if not os.path.exists('log/mcpg'):
-        os.mkdir('log/mcpg')
+        os.makedirs(os.path.join('log','mcpg'))
 
     if not os.path.exists('models/tql'):
-        os.mkdir('models/tql')
+        os.makedirs('models/tql')
     if not os.path.exists('models/dql'):
-        os.mkdir('models/tql')
+        os.makedirs('models/dql')
     if not os.path.exists('models/mcpg'):
-        os.mkdir('models/mcpg')
+        os.makedirs('models/mcpg')
     
     if not os.path.exists('output/tql'):
-        os.mkdir('output/tql')
+        os.makedirs('output/tql')
     if not os.path.exists('output/dql'):
-        os.mkdir('output/dql')
+        os.makedirs('output/dql')
     if not os.path.exists('output/mcpg'):
-        os.mkdir('output/mcpg')
+        os.makedirs('output/mcpg')
 
     if args.simulate:
         if args.simulate.lower() == 'tql':
