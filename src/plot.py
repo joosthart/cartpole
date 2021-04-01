@@ -123,5 +123,5 @@ def plot_mcpg(mean_str, std_str, params, savepath):
     ax.legend(loc = 4)
 
     plt.tight_layout()
-    plt.savefig(savepath, dpi=300)
+    plt.savefig(savepath +     plt.savefig(savepath + "Simulation_mcpg_lr{}_gamma{}_Normalized{}_N_hidden_layers{}.pdf".format(params[0], params[1], np.bool(params[2]), np.int(params[3])), dpi=300)
     plt.close()

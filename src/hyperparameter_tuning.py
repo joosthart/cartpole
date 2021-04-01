@@ -239,17 +239,17 @@ def make_figures_mcpg():
     stds, means, params, succeed, amount_succeed = load_results_mcpg(direc)
     
     #Make plots with highest mean and most succeeded epochs
-    plot(mean_str, std_str, params[np.argmax(means)], direc)
-    plot(mean_str, std_str, params[np.argmax(amount_succeed)], direc)
+    plot_mcpg(mean_str, std_str, params[np.argmax(means)], direc)
+    plot_mcpg(mean_str, std_str, params[np.argmax(amount_succeed)], direc)
     
     #Get figure of longer episode number runs
     mean_str = 'running_mean10000e_highestmean_lr{}_gamma{}_normalize{}_hiddenlayers{}.npy'
     std_str  = 'running_std10000e_highestmean_lr{}_gamma{}_normalize{}_hiddenlayers{}.npy'
-    plot(mean_str, std_str, params[np.argmax(means)], direc)
+    plot_mcpg(mean_str, std_str, params[np.argmax(means)], direc)
     
     mean_str = 'running_mean10000e_mostsucceed_lr{}_gamma{}_normalize{}_hiddenlayers{}.npy'
     std_str  = 'running_std10000e_mostsucceed_lr{}_gamma{}_normalize{}_hiddenlayers{}.npy'
-    plot(mean_str, std_str, params[np.argmax(amount_succeed)], direc)
+    plot_mcpg(mean_str, std_str, params[np.argmax(amount_succeed)], direc)
 
 
 def mcpg(n_cores = 3):
