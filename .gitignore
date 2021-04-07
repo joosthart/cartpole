@@ -130,9 +130,12 @@ dmypy.json
 
 # plots
 *.pdf
+*.png
 
 # vscode environment
 .vscode/
+
+
 
 # log dir 
 log*
